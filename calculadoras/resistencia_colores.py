@@ -3,12 +3,12 @@ from tkinter import ttk
 from typing import List
 
 from logica.resistencias import (
-	SIGNIFICANT_VALUES,
-	MULTIPLIERS,
-	TOLERANCES,
-	PPM_VALUES,
-	calculate_resistance_from_bands,
-	format_ohms,
+	VALORES_SIGNIFICATIVOS,
+	MULTIPLICADORES,
+	TOLERANCIAS,
+	VALORES_PPM,
+	calcular_resistencia_por_bandas,
+	formatear_ohmios,
 )
 
 
@@ -90,13 +90,13 @@ class ResistenciaColoresFrame(ttk.Frame):
 
 	def _colors_for_role(self, role: str):
 		if role == "d":
-			return list(SIGNIFICANT_VALUES.keys())
+			return list(VALORES_SIGNIFICATIVOS.keys())
 		if role == "m":
-			return list(MULTIPLIERS.keys())
+			return list(MULTIPLICADORES.keys())
 		if role == "t":
-			return list(TOLERANCES.keys())
+			return list(TOLERANCIAS.keys())
 		if role == "ppm":
-			return list(PPM_VALUES.keys())
+			return list(VALORES_PPM.keys())
 		return []
 
 	def _update_result(self) -> None:
@@ -104,8 +104,8 @@ class ResistenciaColoresFrame(ttk.Frame):
 		if any(b == "" for b in bands):
 			return
 		try:
-			value, tol, ppm = calculate_resistance_from_bands(bands)
-			self.result_var.set(format_ohms(value))
+			value, tol, ppm = calcular_resistencia_por_bandas(bands)
+			self.result_var.set(formatear_ohmios(value))
 			detail_parts = []
 			if tol is not None:
 				detail_parts.append(f"±{tol}%")

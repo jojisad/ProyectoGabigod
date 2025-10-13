@@ -5,16 +5,16 @@ from typing import List, Tuple
 
 
 @dataclass(frozen=True)
-class BandSpec:
+class EspecificacionBanda:
 	color: str
-	value: int | None = None
-	multiplier: float | None = None
-	tolerance: float | None = None
+	valor: int | None = None
+	multiplicador: float | None = None
+	tolerancia: float | None = None
 	ppm: int | None = None
 
 
 # Base tables per IEC 60062
-SIGNIFICANT_VALUES = {
+VALORES_SIGNIFICATIVOS = {
 	"negro": 0,
 	"marrón": 1,
 	"rojo": 2,
@@ -27,7 +27,7 @@ SIGNIFICANT_VALUES = {
 	"blanco": 9,
 }
 
-MULTIPLIERS = {
+MULTIPLICADORES = {
 	"rosa": 0.001,
 	"plata": 0.01,
 	"oro": 0.1,
@@ -43,7 +43,7 @@ MULTIPLIERS = {
 	"blanco": 1_000_000_000,
 }
 
-TOLERANCES = {
+TOLERANCIAS = {
 	"marrón": 1.0,
 	"rojo": 2.0,
 	"verde": 0.5,
@@ -54,7 +54,7 @@ TOLERANCES = {
 	"plata": 10.0,
 }
 
-PPM_VALUES = {
+VALORES_PPM = {
 	"marrón": 100,
 	"rojo": 50,
 	"naranja": 15,
@@ -64,7 +64,7 @@ PPM_VALUES = {
 }
 
 
-def calculate_resistance_from_bands(bands: List[str]) -> Tuple[float, float | None, int | None]:
+def calcular_resistencia_por_bandas(bandas: List[str]) -> Tuple[float, float | None, int | None]:
 	"""
 	Calcula resistencia a partir de bandas.
 
@@ -74,26 +74,26 @@ def calculate_resistance_from_bands(bands: List[str]) -> Tuple[float, float | No
 
 	Devuelve (ohmios, tolerancia %, ppm)
 	"""
-	band_count = len(bands)
+	band_count = len(bandas)
 	if band_count not in (4, 5, 6):
 		raise ValueError("Número de bandas no soportado")
 
 	if band_count == 4:
-		digits = [SIGNIFICANT_VALUES[bands[0]], SIGNIFICANT_VALUES[bands[1]]]
-		mult = MULTIPLIERS[bands[2]]
-		tol = TOLERANCES.get(bands[3])
+		digits = [VALORES_SIGNIFICATIVOS[bandas[0]], VALORES_SIGNIFICATIVOS[bandas[1]]]
+		mult = MULTIPLICADORES[bandas[2]]
+		tol = TOLERANCIAS.get(bandas[3])
 		ppm = None
 	else:
-		digits = [SIGNIFICANT_VALUES[bands[0]], SIGNIFICANT_VALUES[bands[1]], SIGNIFICANT_VALUES[bands[2]]]
-		mult = MULTIPLIERS[bands[3]]
-		tol = TOLERANCES.get(bands[4])
-		ppm = PPM_VALUES.get(bands[5]) if band_count == 6 else None
+		digits = [VALORES_SIGNIFICATIVOS[bandas[0]], VALORES_SIGNIFICATIVOS[bandas[1]], VALORES_SIGNIFICATIVOS[bandas[2]]]
+		mult = MULTIPLICADORES[bandas[3]]
+		tol = TOLERANCIAS.get(bandas[4])
+		ppm = VALORES_PPM.get(bandas[5]) if band_count == 6 else None
 
 	value = int("".join(str(d) for d in digits)) * mult
 	return float(value), tol, ppm
 
 
-EIA96_CODE_TO_VALUE = {
+EIA96_CODIGO_A_VALOR = {
     # Tabla completa EIA-96 (valores base, antes del multiplicador)
     "01": 100,
     "02": 102,
@@ -193,7 +193,7 @@ EIA96_CODE_TO_VALUE = {
     "96": 976,
 }
 
-EIA96_MULTIPLIERS = {
+EIA96_MULTIPLICADORES = {
 	"Z": 0.001,
 	"Y": 0.01,
 	"R": 0.1,
@@ -209,47 +209,55 @@ EIA96_MULTIPLIERS = {
 }
 
 
-def parse_smd_eia_3digits(code: str) -> float:
+def parsear_smd_eia_3_digitos(codigo: str) -> float:
 	# XY Z => XY * 10^Z
-	if not code.isdigit() or len(code) != 3:
+	if not codigo.isdigit() or len(codigo) != 3:
 		raise ValueError("Código 3 dígitos inválido")
-	base = int(code[:2])
-	exponent = int(code[2])
+	base = int(codigo[:2])
+	exponent = int(codigo[2])
 	return float(base * (10 ** exponent))
 
 
-def parse_smd_eia_4digits(code: str) -> float:
+def parsear_smd_eia_4_digitos(codigo: str) -> float:
 	# XYZ W => XYZ * 10^W
-	if not code.isdigit() or len(code) != 4:
+	if not codigo.isdigit() or len(codigo) != 4:
 		raise ValueError("Código 4 dígitos inválido")
-	base = int(code[:3])
-	exponent = int(code[3])
+	base = int(codigo[:3])
+	exponent = int(codigo[3])
 	return float(base * (10 ** exponent))
 
 
-def parse_smd_eia_96(code: str) -> float:
+def parsear_smd_eia_96(codigo: str) -> float:
 	# 2 digits + letter multiplier
-	if len(code) != 3:
+	if len(codigo) != 3:
 		raise ValueError("Código EIA-96 inválido")
-	base = EIA96_CODE_TO_VALUE.get(code[:2])
+	base = EIA96_CODIGO_A_VALOR.get(codigo[:2])
 	if base is None:
 		raise ValueError("Par de dígitos no reconocido en EIA-96")
-	mult_char = code[2].upper()
-	mult = EIA96_MULTIPLIERS.get(mult_char)
+	mult_char = codigo[2].upper()
+	mult = EIA96_MULTIPLICADORES.get(mult_char)
 	if mult is None:
 		raise ValueError("Multiplicador EIA-96 no reconocido")
 	return float(base * mult)
 
 
-def format_ohms(value_ohms: float) -> str:
+def formatear_ohmios(valor_ohmios: float) -> str:
 	"""Formatea ohmios a cadena con unidad apropiada (Ω, kΩ, MΩ, GΩ)."""
-	abs_value = abs(value_ohms)
+	abs_value = abs(valor_ohmios)
 	if abs_value >= 1_000_000_000:
-		return f"{value_ohms/1_000_000_000:.3g} GΩ"
+		return f"{valor_ohmios/1_000_000_000:.3g} GΩ"
 	if abs_value >= 1_000_000:
-		return f"{value_ohms/1_000_000:.3g} MΩ"
+		return f"{valor_ohmios/1_000_000:.3g} MΩ"
 	if abs_value >= 1_000:
-		return f"{value_ohms/1_000:.3g} kΩ"
-	return f"{value_ohms:.3g} Ω"
+		return f"{valor_ohmios/1_000:.3g} kΩ"
+	return f"{valor_ohmios:.3g} Ω"
+
+
+def formatear_ohmios_multiple(valor_ohmios: float) -> str:
+	"""Devuelve el valor al mismo tiempo en Ω, kΩ y MΩ."""
+	ohm = valor_ohmios
+	kohm = valor_ohmios / 1_000
+	mohm = valor_ohmios / 1_000_000
+	return f"Ω: {ohm:.6g}   |   kΩ: {kohm:.6g}   |   MΩ: {mohm:.6g}"
 
 

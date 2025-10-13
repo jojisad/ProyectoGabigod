@@ -19,6 +19,10 @@ try:
 except Exception:
 	SMDResistenciaFrame = None
 
+try:
+	from calculadoras.capacitor_smd import CalculadoraCapacitorSMD
+except Exception:
+	CalculadoraCapacitorSMD = None
 
 class MultiCalcApp(tk.Tk):
 	def __init__(self) -> None:
@@ -46,6 +50,9 @@ class MultiCalcApp(tk.Tk):
 		)
 		calculadoras_menu.add_command(
 			label="Código SMD (3/4 dígitos y EIA-96)", command=self.show_smd
+		)
+		calculadoras_menu.add_command(
+			label="Capacitor SMD (3/4 dígitos y EIA-198)", command=self.show_capacitor
 		)
 		menubar.add_cascade(label="Calculadoras", menu=calculadoras_menu)
 
@@ -79,6 +86,16 @@ class MultiCalcApp(tk.Tk):
 		frame.pack(fill=tk.BOTH, expand=True)
 		self.frames["smd"] = frame
 
+	def show_capacitor(self) -> None:
+		self._clear_container()
+		if CalculadoraCapacitorSMD is None:
+			label = ttk.Label(self.container, text="Módulo no disponible")
+			label.pack(padx=16, pady=16)
+			return
+		frame = CalculadoraCapacitorSMD(self.container, on_back=self.show_main_menu)
+		frame.pack(fill=tk.BOTH, expand=True)
+		self.frames["cap_smd"] = frame
+
 
 class MainMenu(ttk.Frame):
 	def __init__(self, master: tk.Misc, on_open_colors, on_open_smd) -> None:
@@ -108,6 +125,14 @@ class MainMenu(ttk.Frame):
 
 		btn2 = ttk.Button(btns, text="Código SMD (3/4 dígitos y EIA-96)", command=self.on_open_smd)
 		btn2.grid(row=0, column=1, padx=10, pady=10)
+
+		# Intentar importar aquí para evitar dependencia dura
+		try:
+			from calculadoras.capacitor_smd import CalculadoraCapacitorSMD  # noqa: F401
+			btn3 = ttk.Button(btns, text="Capacitor SMD (3/4 dígitos y EIA-198)", command=self.master.master.show_capacitor if hasattr(self.master, 'master') else None)
+			btn3.grid(row=0, column=2, padx=10, pady=10)
+		except Exception:
+			pass
 
 
 def main() -> None:

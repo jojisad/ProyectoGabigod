@@ -3,10 +3,11 @@ from tkinter import ttk
 from typing import Callable
 
 from logica.resistencias import (
-	parse_smd_eia_3digits,
-	parse_smd_eia_4digits,
-	parse_smd_eia_96,
-	format_ohms,
+	parsear_smd_eia_3_digitos,
+	parsear_smd_eia_4_digitos,
+	parsear_smd_eia_96,
+	formatear_ohmios,
+	formatear_ohmios_multiple,
 )
 
 
@@ -21,26 +22,70 @@ class SMDResistenciaFrame(ttk.Frame):
 			btn_back = ttk.Button(head, text="⟵ Volver al menú", command=on_back)
 			btn_back.pack(side=tk.RIGHT, padx=10)
 
-		tabs = ttk.Notebook(self)
+		# Layout con tabs a la izquierda y dibujo a la derecha
+		content = ttk.Frame(self)
+		content.pack(fill=tk.BOTH, expand=True)
+		left = ttk.Frame(content)
+		left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+		right = ttk.Frame(content)
+		right.pack(side=tk.RIGHT, fill=tk.Y)
+
+		tabs = ttk.Notebook(left)
 		tabs.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
-		self.tab_3d = KeypadTab(tabs, parse_smd_eia_3digits, digits=3)
-		self.tab_4d = KeypadTab(tabs, parse_smd_eia_4digits, digits=4)
-		self.tab_96 = EIA96Tab(tabs)
+		# Canvas del chip SMD
+		self.canvas = tk.Canvas(right, width=320, height=200, bg="#fafafa", highlightthickness=1, highlightbackground="#ddd")
+		self.canvas.pack(padx=8, pady=8)
+		self.canvas.bind("<Configure>", lambda e: self._redibujar_guardado())
+
+		update_cb = lambda valor, codigo: self._actualizar_dibujo(valor, codigo)
+
+		self.tab_3d = KeypadTab(tabs, parsear_smd_eia_3_digitos, digits=3, update_cb=update_cb)
+		self.tab_4d = KeypadTab(tabs, parsear_smd_eia_4_digitos, digits=4, update_cb=update_cb)
+		self.tab_96 = EIA96Tab(tabs, update_cb)
 
 		tabs.add(self.tab_3d, text="EIA 3 dígitos")
 		tabs.add(self.tab_4d, text="EIA 4 dígitos")
 		tabs.add(self.tab_96, text="EIA-96")
 
+		self._ultimo_valor = None
+		self._ultimo_codigo = ""
+		self._actualizar_dibujo(None, "")
+
+	def _actualizar_dibujo(self, valor_ohms, codigo):
+		self._ultimo_valor = valor_ohms
+		self._ultimo_codigo = codigo
+		self.canvas.delete("all")
+		w = int(self.canvas.winfo_width() if self.canvas.winfo_width() > 1 else self.canvas.winfo_reqwidth())
+		h = int(self.canvas.winfo_height() if self.canvas.winfo_height() > 1 else 200)
+		cx = w // 2
+		cy = h // 2
+		chip_w = w - 80
+		chip_h = 70
+		pad_w = 30
+		# cuerpo y pads
+		self.canvas.create_rectangle(cx - chip_w//2, cy - chip_h//2, cx + chip_w//2, cy + chip_h//2, fill="#303030", outline="#4a4a4a")
+		self.canvas.create_rectangle(cx - chip_w//2 - pad_w, cy - chip_h//2 + 10, cx - chip_w//2, cy + chip_h//2 - 10, fill="#c9dceb", outline="#9bb7cc")
+		self.canvas.create_rectangle(cx + chip_w//2, cy - chip_h//2 + 10, cx + chip_w//2 + pad_w, cy + chip_h//2 - 10, fill="#c9dceb", outline="#9bb7cc")
+		# Código
+		self.canvas.create_text(cx, cy, text=codigo, fill="#ffffff", font=("Segoe UI", 14, "bold"))
+		if valor_ohms is not None:
+			self.canvas.create_text(cx, cy + chip_h//2 + 20, text=formatear_ohmios(valor_ohms), fill="#333")
+			self.canvas.create_text(cx, cy + chip_h//2 + 38, text=formatear_ohmios_multiple(valor_ohms), fill="#555", font=("Segoe UI", 9))
+
+	def _redibujar_guardado(self):
+		self._actualizar_dibujo(self._ultimo_valor, self._ultimo_codigo)
+
 
 
 class KeypadTab(ttk.Frame):
-	def __init__(self, master: tk.Misc, parser: Callable[[str], float], digits: int) -> None:
+	def __init__(self, master: tk.Misc, parser: Callable[[str], float], digits: int, update_cb=None) -> None:
 		super().__init__(master)
 		self.parser = parser
 		self.digits = digits
 		self.value_var = tk.StringVar()
 		self.result_var = tk.StringVar()
+		self.update_cb = update_cb
 
 		head = ttk.Frame(self)
 		head.pack(fill=tk.X, padx=8, pady=6)
@@ -79,19 +124,26 @@ class KeypadTab(ttk.Frame):
 		code = self.value_var.get().strip()
 		if len(code) != self.digits:
 			self.result_var.set("")
+			if self.update_cb:
+				self.update_cb(None, code)
 			return
 		try:
 			value = self.parser(code)
-			self.result_var.set(format_ohms(value))
+			self.result_var.set(formatear_ohmios(value))
+			if self.update_cb:
+				self.update_cb(value, code)
 		except Exception as exc:
 			self.result_var.set(f"Error: {exc}")
+			if self.update_cb:
+				self.update_cb(None, code)
 
 
 class EIA96Tab(ttk.Frame):
-	def __init__(self, master: tk.Misc) -> None:
+	def __init__(self, master: tk.Misc, update_cb=None) -> None:
 		super().__init__(master)
 		self.result_var = tk.StringVar()
 		self.code_var = tk.StringVar()
+		self.update_cb = update_cb
 
 		head = ttk.Frame(self)
 		head.pack(fill=tk.X, padx=8, pady=6)
@@ -142,11 +194,17 @@ class EIA96Tab(ttk.Frame):
 		code = self.code_var.get().strip()
 		if len(code) != 3:
 			self.result_var.set("")
+			if self.update_cb:
+				self.update_cb(None, code)
 			return
 		try:
-			value = parse_smd_eia_96(code)
-			self.result_var.set(format_ohms(value))
+			value = parsear_smd_eia_96(code)
+			self.result_var.set(formatear_ohmios(value))
+			if self.update_cb:
+				self.update_cb(value, code)
 		except Exception as exc:
 			self.result_var.set(f"Error: {exc}")
+			if self.update_cb:
+				self.update_cb(None, code)
 
 
