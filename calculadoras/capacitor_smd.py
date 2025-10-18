@@ -102,16 +102,33 @@ class _KeypadCapTab(ttk.Frame):
 		self.resultado_var = tk.StringVar()
 		self.update_cb = update_cb
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X, padx=8, pady=6)
-		ttk.Label(head, text="Código:").pack(side=tk.LEFT)
-		entry = ttk.Entry(head, textvariable=self.codigo_var, width=max(6, digitos + 1))
-		entry.pack(side=tk.LEFT, padx=6)
+		# Panel de entrada mejorado
+		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código", padding=15)
+		input_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		head = ttk.Frame(input_frame)
+		head.pack(fill=tk.X)
+		
+		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+		entry = ttk.Entry(head, textvariable=self.codigo_var, width=max(8, digitos + 2), 
+			font=("Segoe UI", 12))
+		entry.pack(side=tk.LEFT, padx=10)
 		entry.bind("<KeyRelease>", lambda e: self._actualizar())
-		self.lbl_res = ttk.Label(head, textvariable=self.resultado_var, font=("Segoe UI", 11, "bold"))
-		self.lbl_res.pack(side=tk.LEFT, padx=10)
-		self.lbl_dual = ttk.Label(self, font=("Segoe UI", 10))
-		self.lbl_dual.pack(fill=tk.X, padx=8)
+		
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
+		result_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		# Resultado principal
+		self.lbl_res = ttk.Label(result_frame, textvariable=self.resultado_var, 
+			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
+		self.lbl_res.pack(pady=(0, 10))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
+		self.info_lbl.pack()
 
 		k = ttk.Frame(self)
 		k.pack(padx=8, pady=8)
@@ -139,15 +156,38 @@ class _KeypadCapTab(ttk.Frame):
 		codigo = self.codigo_var.get().strip()
 		if len(codigo) != self.digitos:
 			self.resultado_var.set("")
+			self.info_var.set(f"Ingresa {self.digitos} dígitos para ver el resultado")
 			self.update_cb(None, codigo)
 			return
 		try:
 			valor_f = self.parser(codigo)
 			self.resultado_var.set(formatear_farads(valor_f))
-			self.lbl_dual.config(text=formatear_unidades_multiples(valor_f))
+			
+			# Información adicional
+			info_parts = []
+			if self.digitos == 3:
+				info_parts.append("Código EIA 3 dígitos: XY Z → XY × 10^Z pF")
+			else:
+				info_parts.append("Código EIA 4 dígitos: XYZ W → XYZ × 10^W pF")
+			
+			# Clasificar el valor
+			if valor_f >= 1e-3:
+				info_parts.append(f"Capacitor grande: {valor_f*1000:.2f} mF")
+			elif valor_f >= 1e-6:
+				info_parts.append(f"Capacitor medio: {valor_f*1e6:.2f} µF")
+			elif valor_f >= 1e-9:
+				info_parts.append(f"Capacitor pequeño: {valor_f*1e9:.2f} nF")
+			else:
+				info_parts.append(f"Capacitor muy pequeño: {valor_f*1e12:.2f} pF")
+			
+			# Agregar conversión múltiple
+			info_parts.append(formatear_unidades_multiples(valor_f))
+			
+			self.info_var.set(" • ".join(info_parts))
 			self.update_cb(valor_f, codigo)
 		except Exception as exc:
-			self.resultado_var.set(f"Error: {exc}")
+			self.resultado_var.set("Error en el cálculo")
+			self.info_var.set(f"Error: {str(exc)}")
 			self.update_cb(None, codigo)
 class _KeypadCapTabMixto(ttk.Frame):
 	def __init__(self, master: tk.Misc, update_cb) -> None:
@@ -157,16 +197,33 @@ class _KeypadCapTabMixto(ttk.Frame):
 		self.detalle_var = tk.StringVar()
 		self.update_cb = update_cb
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X, padx=8, pady=6)
-		ttk.Label(head, text="Código (4 dígitos/letra):").pack(side=tk.LEFT)
-		entry = ttk.Entry(head, textvariable=self.codigo_var, width=10)
-		entry.pack(side=tk.LEFT, padx=6)
+		# Panel de entrada mejorado
+		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código Mixto", padding=15)
+		input_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		head = ttk.Frame(input_frame)
+		head.pack(fill=tk.X)
+		
+		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+		entry = ttk.Entry(head, textvariable=self.codigo_var, width=12, 
+			font=("Segoe UI", 12))
+		entry.pack(side=tk.LEFT, padx=10)
 		entry.bind("<KeyRelease>", lambda e: self._actualizar())
-		lbl = ttk.Label(head, textvariable=self.resultado_var, font=("Segoe UI", 11, "bold"))
-		lbl.pack(side=tk.LEFT, padx=10)
-		self.lbl_dual = ttk.Label(self, textvariable=self.detalle_var)
-		self.lbl_dual.pack(fill=tk.X, padx=8)
+		
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
+		result_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		# Resultado principal
+		lbl = ttk.Label(result_frame, textvariable=self.resultado_var, 
+			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
+		lbl.pack(pady=(0, 10))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
+		self.info_lbl.pack()
 
 		# Teclado: dígitos + R + letras de tolerancia
 		panel = ttk.Frame(self)
@@ -195,17 +252,39 @@ class _KeypadCapTabMixto(ttk.Frame):
 		codigo = self.codigo_var.get().upper()
 		if not codigo:
 			self.resultado_var.set("")
-			self.detalle_var.set("")
+			self.info_var.set("Ingresa un código de 4 caracteres para ver el resultado")
 			self.update_cb(None, codigo)
 			return
 		try:
 			valor_f, tol = parsear_capacitor_eia_cuatro_mixto(codigo)
 			self.resultado_var.set(formatear_farads(valor_f))
-			self.detalle_var.set(formatear_unidades_multiples(valor_f) + (f"  (±{tol}%)" if tol is not None else ""))
+			
+			# Información adicional
+			info_parts = []
+			info_parts.append("Código EIA 4 mixto: XYZ + W (dígito o letra tolerancia)")
+			
+			# Mostrar tolerancia si está disponible
+			if tol is not None:
+				info_parts.append(f"Tolerancia: ±{tol}%")
+			
+			# Clasificar el valor
+			if valor_f >= 1e-3:
+				info_parts.append(f"Capacitor grande: {valor_f*1000:.2f} mF")
+			elif valor_f >= 1e-6:
+				info_parts.append(f"Capacitor medio: {valor_f*1e6:.2f} µF")
+			elif valor_f >= 1e-9:
+				info_parts.append(f"Capacitor pequeño: {valor_f*1e9:.2f} nF")
+			else:
+				info_parts.append(f"Capacitor muy pequeño: {valor_f*1e12:.2f} pF")
+			
+			# Agregar conversión múltiple
+			info_parts.append(formatear_unidades_multiples(valor_f))
+			
+			self.info_var.set(" • ".join(info_parts))
 			self.update_cb(valor_f, codigo, tol)
 		except Exception as exc:
-			self.resultado_var.set(f"Error: {exc}")
-			self.detalle_var.set("")
+			self.resultado_var.set("Error en el cálculo")
+			self.info_var.set(f"Error: {str(exc)}")
 			self.update_cb(None, codigo)
 
 
@@ -218,14 +297,33 @@ class _EIA198Tab(ttk.Frame):
 		self.tol_var = tk.StringVar()
 		self.update_cb = update_cb
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X, padx=8, pady=6)
-		ttk.Label(head, text="Código alfabético:").pack(side=tk.LEFT)
-		entry = ttk.Entry(head, textvariable=self.codigo_var, width=8)
-		entry.pack(side=tk.LEFT, padx=6)
+		# Panel de entrada mejorado
+		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código EIA-198", padding=15)
+		input_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		head = ttk.Frame(input_frame)
+		head.pack(fill=tk.X)
+		
+		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+		entry = ttk.Entry(head, textvariable=self.codigo_var, width=8, 
+			font=("Segoe UI", 12))
+		entry.pack(side=tk.LEFT, padx=10)
 		entry.bind("<KeyRelease>", lambda e: self._actualizar())
-		self.lbl_res = ttk.Label(head, textvariable=self.resultado_var, font=("Segoe UI", 11, "bold"))
-		self.lbl_res.pack(side=tk.LEFT, padx=10)
+		
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
+		result_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		# Resultado principal
+		self.lbl_res = ttk.Label(result_frame, textvariable=self.resultado_var, 
+			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
+		self.lbl_res.pack(pady=(0, 10))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
+		self.info_lbl.pack()
 
 		# Panel de botones: letras EIA-198 y dígitos
 		panel = ttk.Frame(self)
@@ -276,27 +374,55 @@ class _EIA198Tab(ttk.Frame):
 		if not codigo:
 			self.resultado_var.set("")
 			self.rango_var.set("")
+			self.info_var.set("Ingresa un código de 2 caracteres (letra + dígito) para ver el resultado")
 			return
 		try:
 			if len(codigo) < 2:
 				self.resultado_var.set("")
 				self.rango_var.set("")
+				self.info_var.set("Ingresa un código de 2 caracteres (letra + dígito) para ver el resultado")
 				self.update_cb(None, codigo)
 				return
 			valor = parsear_capacitor_eia_198(codigo[:2])
 			self.resultado_var.set(formatear_farads(valor))
+			
+			# Información adicional
+			info_parts = []
+			info_parts.append("Código EIA-198: Letra + Dígito")
+			
+			# Mostrar desglose del código
+			letra = codigo[0]
+			digito = codigo[1]
+			info_parts.append(f"Desglose: {letra} + {digito}")
+			
+			# Mostrar tolerancia si está seleccionada
 			tol = TOLERANCIAS_EIA198.get(self.tol_var.get())
 			if tol is not None:
 				vmin, vmax = obtener_rango_por_tolerancia(valor, tol)
 				self.rango_var.set(f"Rango: {formatear_farads(vmin)} a {formatear_farads(vmax)} (±{tol}%)")
+				info_parts.append(f"Tolerancia: ±{tol}%")
 			else:
 				self.rango_var.set("")
-			self.unidades_var.set(formatear_unidades_multiples(valor))
+			
+			# Clasificar el valor
+			if valor >= 1e-3:
+				info_parts.append(f"Capacitor grande: {valor*1000:.2f} mF")
+			elif valor >= 1e-6:
+				info_parts.append(f"Capacitor medio: {valor*1e6:.2f} µF")
+			elif valor >= 1e-9:
+				info_parts.append(f"Capacitor pequeño: {valor*1e9:.2f} nF")
+			else:
+				info_parts.append(f"Capacitor muy pequeño: {valor*1e12:.2f} pF")
+			
+			# Agregar conversión múltiple
+			info_parts.append(formatear_unidades_multiples(valor))
+			
+			self.info_var.set(" • ".join(info_parts))
 			self.update_cb(valor, codigo, tol)
 		except Exception:
-			self.resultado_var.set("Código no válido")
+			self.resultado_var.set("Error en el cálculo")
 			self.rango_var.set("")
-			self.unidades_var.set("")
+			self.info_var.set("Código no válido")
 			self.update_cb(None, codigo)
 
 

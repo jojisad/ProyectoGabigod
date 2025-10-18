@@ -19,47 +19,106 @@ class ResistenciaColoresFrame(ttk.Frame):
 		self.band_count_var = tk.IntVar(value=4)
 		self.band_colors: List[tk.StringVar] = []
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X)
-		title = ttk.Label(head, text="Calculadora: Código de colores", font=("Segoe UI", 16, "bold"))
-		title.pack(side=tk.LEFT, padx=10, pady=12)
+		# Header con título y botón de regreso
+		header_frame = ttk.Frame(self)
+		header_frame.pack(fill=tk.X, padx=20, pady=15)
+		
+		title = ttk.Label(header_frame, text="🎨 Calculadora: Código de Colores", 
+			font=("Segoe UI", 18, "bold"), foreground="#2c3e50")
+		title.pack(side=tk.LEFT)
+		
 		if on_back:
-			btn_back = ttk.Button(head, text="⟵ Volver al menú", command=on_back)
-			btn_back.pack(side=tk.RIGHT, padx=10)
+			btn_back = ttk.Button(header_frame, text="⟵ Volver al menú", 
+				command=on_back)
+			btn_back.pack(side=tk.RIGHT)
 
-		controls = ttk.Frame(self)
-		controls.pack(fill=tk.X, padx=10)
+		# Contenedor principal
+		main_frame = ttk.Frame(self)
+		main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+		# Panel de controles
+		controls_frame = ttk.LabelFrame(main_frame, text="Configuración", padding=15)
+		controls_frame.pack(fill=tk.X, pady=(0, 15))
 
 		# Selector de número de bandas
-		ttk.Label(controls, text="Bandas:").grid(row=0, column=0, sticky=tk.W, padx=4, pady=4)
+		bands_label = ttk.Label(controls_frame, text="Número de bandas:", 
+			font=("Segoe UI", 11, "bold"))
+		bands_label.pack(anchor=tk.W, pady=(0, 10))
+		
+		bands_frame = ttk.Frame(controls_frame)
+		bands_frame.pack(fill=tk.X)
+		
 		for i, n in enumerate((4, 5, 6), start=1):
-			ttk.Radiobutton(controls, text=str(n), variable=self.band_count_var, value=n, command=self._rebuild_bands).grid(row=0, column=i, padx=2)
+			radio = ttk.Radiobutton(bands_frame, text=f"{n} bandas", 
+				variable=self.band_count_var, value=n, command=self._rebuild_bands)
+			radio.pack(side=tk.LEFT, padx=(0, 20))
 
-		self.bands_frame = ttk.Frame(self)
-		self.bands_frame.pack(fill=tk.X, padx=10, pady=6)
+		# Panel de selección de bandas
+		self.bands_panel = ttk.LabelFrame(main_frame, text="Selección de Colores", padding=15)
+		self.bands_panel.pack(fill=tk.X, pady=(0, 15))
 
 		# Canvas para previsualizar la resistencia
-		self.canvas = tk.Canvas(self, height=140, bg="#fafafa", highlightthickness=1, highlightbackground="#ddd")
-		self.canvas.pack(fill=tk.X, padx=10, pady=10)
+		canvas_frame = ttk.LabelFrame(main_frame, text="Previsualización", padding=15)
+		canvas_frame.pack(fill=tk.X, pady=(0, 15))
+		
+		self.canvas = tk.Canvas(canvas_frame, height=160, bg="#ffffff", 
+			highlightthickness=2, highlightbackground="#e0e0e0", relief="solid")
+		self.canvas.pack(fill=tk.X, pady=10)
 		self.canvas.bind("<Configure>", lambda e: self._draw_resistor([v.get() for v in self.band_colors] if self.band_colors else ["negro","negro","negro","marrón"]))
 
-		# Resultado
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(main_frame, text="📊 Resultado del Cálculo", padding=20)
+		result_frame.pack(fill=tk.X)
+		
+		# Contenedor principal del resultado
+		result_container = ttk.Frame(result_frame)
+		result_container.pack(fill=tk.X)
+		
+		# Resultado principal con mejor diseño
 		self.result_var = tk.StringVar(value="")
-		self.detail_var = tk.StringVar(value="")
-		result_frame = ttk.Frame(self)
-		result_frame.pack(fill=tk.X, padx=10, pady=6)
-		ttk.Label(result_frame, text="Resultado:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
-		self.result_label = ttk.Label(result_frame, textvariable=self.result_var)
-		self.result_label.pack(side=tk.LEFT, padx=8)
-		self.detail_label = ttk.Label(self, textvariable=self.detail_var)
-		self.detail_label.pack(fill=tk.X, padx=10)
+		result_label = ttk.Label(result_container, textvariable=self.result_var, 
+			font=("Segoe UI", 20, "bold"), foreground="#1a1a1a")
+		result_label.pack(pady=(0, 15))
+		
+		# Panel de detalles con mejor organización
+		details_frame = ttk.Frame(result_container)
+		details_frame.pack(fill=tk.X)
+		
+		# Tolerancia
+		self.tolerance_var = tk.StringVar(value="")
+		tolerance_label = ttk.Label(details_frame, text="Tolerancia:", 
+			font=("Segoe UI", 11, "bold"), foreground="#2c3e50")
+		tolerance_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+		
+		self.tolerance_value_var = tk.StringVar(value="")
+		tolerance_value_label = ttk.Label(details_frame, textvariable=self.tolerance_value_var, 
+			font=("Segoe UI", 11), foreground="#1a1a1a")
+		tolerance_value_label.grid(row=0, column=1, sticky=tk.W)
+		
+		# Coeficiente de temperatura (PPM)
+		self.ppm_var = tk.StringVar(value="")
+		ppm_label = ttk.Label(details_frame, text="Coef. Temp.:", 
+			font=("Segoe UI", 11, "bold"), foreground="#2c3e50")
+		ppm_label.grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+		
+		self.ppm_value_var = tk.StringVar(value="")
+		ppm_value_label = ttk.Label(details_frame, textvariable=self.ppm_value_var, 
+			font=("Segoe UI", 11), foreground="#1a1a1a")
+		ppm_value_label.grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		info_label = ttk.Label(result_container, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=600)
+		info_label.pack(pady=(15, 0))
 
 		self._rebuild_bands()
 		# Forzar un primer dibujo con 4 bandas por defecto
 		self.after(10, self._update_result)
 
 	def _rebuild_bands(self) -> None:
-		for child in self.bands_frame.winfo_children():
+		# Limpiar panel anterior
+		for child in self.bands_panel.winfo_children():
 			child.destroy()
 		self.band_colors.clear()
 
@@ -73,18 +132,30 @@ class ResistenciaColoresFrame(ttk.Frame):
 		else:
 			roles = ["d", "d", "d", "m", "t", "ppm"]
 
+		# Crear grid de selección
 		for idx, role in enumerate(roles):
 			var = tk.StringVar()
 			self.band_colors.append(var)
-			frame = ttk.Frame(self.bands_frame)
-			frame.grid(row=0, column=idx, padx=4)
-			label = ttk.Label(frame, text=f"Banda {idx+1}\n({role})")
-			label.pack()
-			combo = ttk.Combobox(frame, textvariable=var, state="readonly", width=10)
+			
+			band_frame = ttk.Frame(self.bands_panel)
+			band_frame.grid(row=0, column=idx, padx=10, pady=5, sticky="nsew")
+			
+			# Etiqueta de la banda
+			role_names = {"d": "Dígito", "m": "Multiplicador", "t": "Tolerancia", "ppm": "PPM"}
+			label = ttk.Label(band_frame, text=f"Banda {idx+1}\n({role_names[role]})", 
+				font=("Segoe UI", 10, "bold"), justify=tk.CENTER)
+			label.pack(pady=(0, 5))
+			
+			# Combo de colores
+			combo = ttk.Combobox(band_frame, textvariable=var, state="readonly", 
+				width=12)
 			combo["values"] = self._colors_for_role(role)
 			combo.bind("<<ComboboxSelected>>", lambda e: self._update_result())
 			combo.current(0)
 			combo.pack()
+			
+			# Configurar grid weights
+			self.bands_panel.grid_columnconfigure(idx, weight=1)
 
 		self._update_result()
 
@@ -100,22 +171,68 @@ class ResistenciaColoresFrame(ttk.Frame):
 		return []
 
 	def _update_result(self) -> None:
-		bands = [v.get() for v in self.band_colors]
-		if any(b == "" for b in bands):
+		bands = [v.get() for v in self.band_colors if v.get()]
+		if len(bands) != len(self.band_colors):
+			self.result_var.set("")
+			self.tolerance_var.set("")
+			self.tolerance_value_var.set("")
+			self.ppm_var.set("")
+			self.ppm_value_var.set("")
+			self.info_var.set("Selecciona todos los colores para ver el resultado")
+			self._draw_resistor(bands)
 			return
 		try:
 			value, tol, ppm = calcular_resistencia_por_bandas(bands)
 			self.result_var.set(formatear_ohmios(value))
-			detail_parts = []
+			
+			# Actualizar tolerancia
 			if tol is not None:
-				detail_parts.append(f"±{tol}%")
+				self.tolerance_var.set("Tolerancia:")
+				self.tolerance_value_var.set(f"±{tol}%")
+			else:
+				self.tolerance_var.set("")
+				self.tolerance_value_var.set("")
+			
+			# Actualizar PPM
 			if ppm is not None:
-				detail_parts.append(f"{ppm} ppm/°C")
-			self.detail_var.set("  ".join(detail_parts))
+				self.ppm_var.set("Coef. Temp.:")
+				self.ppm_value_var.set(f"{ppm} ppm/°C")
+			else:
+				self.ppm_var.set("")
+				self.ppm_value_var.set("")
+			
+			# Información adicional
+			band_count = self.band_count_var.get()
+			info_parts = []
+			if band_count == 4:
+				info_parts.append("Resistencia de 4 bandas: 2 dígitos + multiplicador + tolerancia")
+			elif band_count == 5:
+				info_parts.append("Resistencia de 5 bandas: 3 dígitos + multiplicador + tolerancia")
+			else:
+				info_parts.append("Resistencia de 6 bandas: 3 dígitos + multiplicador + tolerancia + coeficiente de temperatura")
+			
+			# Agregar información sobre el valor
+			if value >= 1000000:
+				info_parts.append(f"Valor alto: {value/1000000:.2f} MΩ")
+			elif value >= 1000:
+				info_parts.append(f"Valor medio: {value/1000:.2f} kΩ")
+			else:
+				info_parts.append(f"Valor bajo: {value:.2f} Ω")
+			
+			# Agregar conversión múltiple
+			from logica.resistencias import formatear_ohmios_multiple
+			info_parts.append(formatear_ohmios_multiple(value))
+			
+			self.info_var.set(" • ".join(info_parts))
 			self._draw_resistor(bands)
 		except Exception as exc:
-			self.result_var.set("Error")
-			self.detail_var.set(str(exc))
+			self.result_var.set("Error en el cálculo")
+			self.tolerance_var.set("")
+			self.tolerance_value_var.set("")
+			self.ppm_var.set("")
+			self.ppm_value_var.set("")
+			self.info_var.set(f"Error: {str(exc)}")
+			self._draw_resistor(bands)
 
 	def _draw_resistor(self, bands: List[str]) -> None:
 		self.canvas.delete("all")
@@ -123,18 +240,26 @@ class ResistenciaColoresFrame(ttk.Frame):
 		h = self.canvas.winfo_height()
 		margin = 40
 		body_w = w - 2 * margin
-		body_h = 60
+		body_h = 80
 		y = h // 2
-		# terminales
-		self.canvas.create_line(margin - 30, y, margin, y, width=6, fill="#999")
-		self.canvas.create_line(w - margin, y, w - margin + 30, y, width=6, fill="#999")
-		# cuerpo
-		self.canvas.create_rectangle(margin, y - body_h // 2, margin + body_w, y + body_h // 2, fill="#f2f2f2", outline="#cfcfcf")
-		# bandas
-		gap = body_w / (len(bands) + 1)
-		for i, color in enumerate(bands, start=1):
-			x = margin + i * gap
-			self.canvas.create_rectangle(x - 8, y - body_h // 2, x + 8, y + body_h // 2, fill=self._tk_color(color), outline="")
+		
+		# Terminales (más gruesas y elegantes)
+		self.canvas.create_line(margin - 35, y, margin, y, width=8, fill="#666", capstyle="round")
+		self.canvas.create_line(w - margin, y, w - margin + 35, y, width=8, fill="#666", capstyle="round")
+		
+		# Cuerpo principal (más elegante)
+		self.canvas.create_rectangle(margin, y - body_h // 2, margin + body_w, y + body_h // 2, 
+			fill="#f8f9fa", outline="#dee2e6", width=2)
+		
+		# Bandas (más definidas)
+		if bands and len(bands) > 0:
+			gap = body_w / (len(bands) + 1)
+			for i, color in enumerate(bands, start=1):
+				x = margin + i * gap
+				band_color = self._tk_color(color)
+				# Banda principal
+				self.canvas.create_rectangle(x - 10, y - body_h // 2, x + 10, y + body_h // 2, 
+					fill=band_color, outline="#333", width=1)
 
 	def _tk_color(self, nombre: str) -> str:
 		# Colores aproximados

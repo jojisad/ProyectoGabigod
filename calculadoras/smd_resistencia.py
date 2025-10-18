@@ -87,14 +87,33 @@ class KeypadTab(ttk.Frame):
 		self.result_var = tk.StringVar()
 		self.update_cb = update_cb
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X, padx=8, pady=6)
-		ttk.Label(head, text="Código:").pack(side=tk.LEFT)
-		entry = ttk.Entry(head, textvariable=self.value_var, width=max(6, digits + 1))
-		entry.pack(side=tk.LEFT, padx=6)
+		# Panel de entrada mejorado
+		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código", padding=15)
+		input_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		head = ttk.Frame(input_frame)
+		head.pack(fill=tk.X)
+		
+		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+		entry = ttk.Entry(head, textvariable=self.value_var, width=max(8, digits + 2), 
+			font=("Segoe UI", 12))
+		entry.pack(side=tk.LEFT, padx=10)
 		entry.bind("<KeyRelease>", lambda e: self._update())
-		self.result_lbl = ttk.Label(head, textvariable=self.result_var, font=("Segoe UI", 11, "bold"))
-		self.result_lbl.pack(side=tk.LEFT, padx=10)
+		
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
+		result_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		# Resultado principal
+		self.result_lbl = ttk.Label(result_frame, textvariable=self.result_var, 
+			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
+		self.result_lbl.pack(pady=(0, 10))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
+		self.info_lbl.pack()
 
 		board = ttk.Frame(self)
 		board.pack(padx=8, pady=8)
@@ -124,16 +143,35 @@ class KeypadTab(ttk.Frame):
 		code = self.value_var.get().strip()
 		if len(code) != self.digits:
 			self.result_var.set("")
+			self.info_var.set(f"Ingresa {self.digits} dígitos para ver el resultado")
 			if self.update_cb:
 				self.update_cb(None, code)
 			return
 		try:
 			value = self.parser(code)
 			self.result_var.set(formatear_ohmios(value))
+			
+			# Información adicional
+			info_parts = []
+			if self.digits == 3:
+				info_parts.append("Código EIA 3 dígitos: XY Z → XY × 10^Z")
+			else:
+				info_parts.append("Código EIA 4 dígitos: XYZ W → XYZ × 10^W")
+			
+			# Clasificar el valor
+			if value >= 1000000:
+				info_parts.append(f"Resistencia alta: {value/1000000:.2f} MΩ")
+			elif value >= 1000:
+				info_parts.append(f"Resistencia media: {value/1000:.2f} kΩ")
+			else:
+				info_parts.append(f"Resistencia baja: {value:.2f} Ω")
+			
+			self.info_var.set(" • ".join(info_parts))
 			if self.update_cb:
 				self.update_cb(value, code)
 		except Exception as exc:
-			self.result_var.set(f"Error: {exc}")
+			self.result_var.set("Error en el cálculo")
+			self.info_var.set(f"Error: {str(exc)}")
 			if self.update_cb:
 				self.update_cb(None, code)
 
@@ -145,14 +183,33 @@ class EIA96Tab(ttk.Frame):
 		self.code_var = tk.StringVar()
 		self.update_cb = update_cb
 
-		head = ttk.Frame(self)
-		head.pack(fill=tk.X, padx=8, pady=6)
-		ttk.Label(head, text="Código seleccionado:").pack(side=tk.LEFT)
-		code_entry = ttk.Entry(head, textvariable=self.code_var, width=6)
-		code_entry.pack(side=tk.LEFT, padx=6)
+		# Panel de entrada mejorado
+		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código EIA-96", padding=15)
+		input_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		head = ttk.Frame(input_frame)
+		head.pack(fill=tk.X)
+		
+		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
+		code_entry = ttk.Entry(head, textvariable=self.code_var, width=8, 
+			font=("Segoe UI", 12))
+		code_entry.pack(side=tk.LEFT, padx=10)
 		code_entry.bind("<KeyRelease>", lambda e: self._from_entry())
-		self.result_lbl = ttk.Label(head, textvariable=self.result_var, font=("Segoe UI", 11, "bold"))
-		self.result_lbl.pack(side=tk.LEFT, padx=10)
+		
+		# Panel de resultados mejorado
+		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
+		result_frame.pack(fill=tk.X, padx=8, pady=6)
+		
+		# Resultado principal
+		self.result_lbl = ttk.Label(result_frame, textvariable=self.result_var, 
+			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
+		self.result_lbl.pack(pady=(0, 10))
+		
+		# Información adicional
+		self.info_var = tk.StringVar(value="")
+		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
+		self.info_lbl.pack()
 
 		board = ttk.Frame(self)
 		board.pack(padx=8, pady=8)
@@ -194,16 +251,37 @@ class EIA96Tab(ttk.Frame):
 		code = self.code_var.get().strip()
 		if len(code) != 3:
 			self.result_var.set("")
+			self.info_var.set("Ingresa un código de 3 caracteres (2 dígitos + letra)")
 			if self.update_cb:
 				self.update_cb(None, code)
 			return
 		try:
 			value = parsear_smd_eia_96(code)
 			self.result_var.set(formatear_ohmios(value))
+			
+			# Información adicional
+			info_parts = []
+			info_parts.append("Código EIA-96: 2 dígitos + letra multiplicador")
+			
+			# Mostrar desglose del código
+			digits = code[:2]
+			letter = code[2]
+			info_parts.append(f"Desglose: {digits} + {letter}")
+			
+			# Clasificar el valor
+			if value >= 1000000:
+				info_parts.append(f"Resistencia alta: {value/1000000:.2f} MΩ")
+			elif value >= 1000:
+				info_parts.append(f"Resistencia media: {value/1000:.2f} kΩ")
+			else:
+				info_parts.append(f"Resistencia baja: {value:.2f} Ω")
+			
+			self.info_var.set(" • ".join(info_parts))
 			if self.update_cb:
 				self.update_cb(value, code)
 		except Exception as exc:
-			self.result_var.set(f"Error: {exc}")
+			self.result_var.set("Error en el cálculo")
+			self.info_var.set(f"Error: {str(exc)}")
 			if self.update_cb:
 				self.update_cb(None, code)
 
