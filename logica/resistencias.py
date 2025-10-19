@@ -214,8 +214,8 @@ def parsear_smd_eia_3_digitos(codigo: str) -> float:
 	if not codigo.isdigit() or len(codigo) != 3:
 		raise ValueError("Código 3 dígitos inválido")
 	base = int(codigo[:2])
-	exponent = int(codigo[2])
-	return float(base * (10 ** exponent))
+	exponente = int(codigo[2])
+	return float(base * (10 ** exponente))
 
 
 def parsear_smd_eia_4_digitos(codigo: str) -> float:
@@ -223,19 +223,19 @@ def parsear_smd_eia_4_digitos(codigo: str) -> float:
 	if not codigo.isdigit() or len(codigo) != 4:
 		raise ValueError("Código 4 dígitos inválido")
 	base = int(codigo[:3])
-	exponent = int(codigo[3])
-	return float(base * (10 ** exponent))
+	exponente = int(codigo[3])
+	return float(base * (10 ** exponente))
 
 
 def parsear_smd_eia_96(codigo: str) -> float:
-	# 2 digits + letter multiplier
+	# 2 dígitos + letra multiplicador
 	if len(codigo) != 3:
 		raise ValueError("Código EIA-96 inválido")
 	base = EIA96_CODIGO_A_VALOR.get(codigo[:2])
 	if base is None:
 		raise ValueError("Par de dígitos no reconocido en EIA-96")
-	mult_char = codigo[2].upper()
-	mult = EIA96_MULTIPLICADORES.get(mult_char)
+	caracter_mult = codigo[2].upper()
+	mult = EIA96_MULTIPLICADORES.get(caracter_mult)
 	if mult is None:
 		raise ValueError("Multiplicador EIA-96 no reconocido")
 	return float(base * mult)
@@ -243,12 +243,12 @@ def parsear_smd_eia_96(codigo: str) -> float:
 
 def formatear_ohmios(valor_ohmios: float) -> str:
 	"""Formatea ohmios a cadena con unidad apropiada (Ω, kΩ, MΩ, GΩ)."""
-	abs_value = abs(valor_ohmios)
-	if abs_value >= 1_000_000_000:
+	valor_absoluto = abs(valor_ohmios)
+	if valor_absoluto >= 1_000_000_000:
 		return f"{valor_ohmios/1_000_000_000:.3g} GΩ"
-	if abs_value >= 1_000_000:
+	if valor_absoluto >= 1_000_000:
 		return f"{valor_ohmios/1_000_000:.3g} MΩ"
-	if abs_value >= 1_000:
+	if valor_absoluto >= 1_000:
 		return f"{valor_ohmios/1_000:.3g} kΩ"
 	return f"{valor_ohmios:.3g} Ω"
 

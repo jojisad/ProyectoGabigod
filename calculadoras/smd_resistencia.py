@@ -40,9 +40,9 @@ class SMDResistenciaFrame(ttk.Frame):
 
 		update_cb = lambda valor, codigo: self._actualizar_dibujo(valor, codigo)
 
-		self.tab_3d = KeypadTab(tabs, parsear_smd_eia_3_digitos, digits=3, update_cb=update_cb)
-		self.tab_4d = KeypadTab(tabs, parsear_smd_eia_4_digitos, digits=4, update_cb=update_cb)
-		self.tab_96 = EIA96Tab(tabs, update_cb)
+		self.tab_3d = TabTeclado(tabs, parsear_smd_eia_3_digitos, digitos=3, callback_actualizacion=update_cb)
+		self.tab_4d = TabTeclado(tabs, parsear_smd_eia_4_digitos, digitos=4, callback_actualizacion=update_cb)
+		self.tab_96 = TabEIA96(tabs, callback_actualizacion=update_cb)
 
 		tabs.add(self.tab_3d, text="EIA 3 dígitos")
 		tabs.add(self.tab_4d, text="EIA 4 dígitos")
@@ -78,14 +78,14 @@ class SMDResistenciaFrame(ttk.Frame):
 
 
 
-class KeypadTab(ttk.Frame):
-	def __init__(self, master: tk.Misc, parser: Callable[[str], float], digits: int, update_cb=None) -> None:
+class TabTeclado(ttk.Frame):
+	def __init__(self, master: tk.Misc, analizador: Callable[[str], float], digitos: int, callback_actualizacion=None) -> None:
 		super().__init__(master)
-		self.parser = parser
-		self.digits = digits
-		self.value_var = tk.StringVar()
-		self.result_var = tk.StringVar()
-		self.update_cb = update_cb
+		self.analizador = analizador
+		self.digitos = digitos
+		self.variable_valor = tk.StringVar()
+		self.variable_resultado = tk.StringVar()
+		self.callback_actualizacion = callback_actualizacion
 
 		# Panel de entrada mejorado
 		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código", padding=15)
@@ -95,93 +95,93 @@ class KeypadTab(ttk.Frame):
 		head.pack(fill=tk.X)
 		
 		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
-		entry = ttk.Entry(head, textvariable=self.value_var, width=max(8, digits + 2), 
+		entry = ttk.Entry(head, textvariable=self.variable_valor, width=max(8, digitos + 2), 
 			font=("Segoe UI", 12))
 		entry.pack(side=tk.LEFT, padx=10)
-		entry.bind("<KeyRelease>", lambda e: self._update())
+		entry.bind("<KeyRelease>", lambda e: self._actualizar())
 		
 		# Panel de resultados mejorado
 		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
 		result_frame.pack(fill=tk.X, padx=8, pady=6)
 		
 		# Resultado principal
-		self.result_lbl = ttk.Label(result_frame, textvariable=self.result_var, 
+		self.etiqueta_resultado = ttk.Label(result_frame, textvariable=self.variable_resultado, 
 			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
-		self.result_lbl.pack(pady=(0, 10))
+		self.etiqueta_resultado.pack(pady=(0, 10))
 		
 		# Información adicional
-		self.info_var = tk.StringVar(value="")
-		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+		self.variable_info = tk.StringVar(value="")
+		self.etiqueta_info = ttk.Label(result_frame, textvariable=self.variable_info, 
 			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
-		self.info_lbl.pack()
+		self.etiqueta_info.pack()
 
-		board = ttk.Frame(self)
-		board.pack(padx=8, pady=8)
-		# keypad con 0-9 y borrar
-		buttons = [str(i) for i in range(10)] + ["⌫", "Limpiar"]
-		for i, label in enumerate(buttons):
-			cmd = (lambda l=label: self._press(l))
-			btn = ttk.Button(board, text=label, width=5, command=cmd)
-			row = i // 6
-			col = i % 6
-			btn.grid(row=row, column=col, padx=2, pady=2)
+		panel_teclado = ttk.Frame(self)
+		panel_teclado.pack(padx=8, pady=8)
+		# teclado con 0-9 y borrar
+		botones = [str(i) for i in range(10)] + ["⌫", "Limpiar"]
+		for i, etiqueta in enumerate(botones):
+			comando = (lambda l=etiqueta: self._presionar(l))
+			btn = ttk.Button(panel_teclado, text=etiqueta, width=5, command=comando)
+			fila = i // 6
+			columna = i % 6
+			btn.grid(row=fila, column=columna, padx=2, pady=2)
 
-		self._update()
+		self._actualizar()
 
-	def _press(self, label: str) -> None:
-		text = self.value_var.get()
-		if label == "⌫":
-			self.value_var.set(text[:-1])
-		elif label == "Limpiar":
-			self.value_var.set("")
+	def _presionar(self, etiqueta: str) -> None:
+		texto = self.variable_valor.get()
+		if etiqueta == "⌫":
+			self.variable_valor.set(texto[:-1])
+		elif etiqueta == "Limpiar":
+			self.variable_valor.set("")
 		else:
-			if len(text) < self.digits:
-				self.value_var.set(text + label)
-		self._update()
+			if len(texto) < self.digitos:
+				self.variable_valor.set(texto + etiqueta)
+		self._actualizar()
 
-	def _update(self) -> None:
-		code = self.value_var.get().strip()
-		if len(code) != self.digits:
-			self.result_var.set("")
-			self.info_var.set(f"Ingresa {self.digits} dígitos para ver el resultado")
-			if self.update_cb:
-				self.update_cb(None, code)
+	def _actualizar(self) -> None:
+		codigo = self.variable_valor.get().strip()
+		if len(codigo) != self.digitos:
+			self.variable_resultado.set("")
+			self.variable_info.set(f"Ingresa {self.digitos} dígitos para ver el resultado")
+			if self.callback_actualizacion:
+				self.callback_actualizacion(None, codigo)
 			return
 		try:
-			value = self.parser(code)
-			self.result_var.set(formatear_ohmios(value))
+			valor = self.analizador(codigo)
+			self.variable_resultado.set(formatear_ohmios(valor))
 			
 			# Información adicional
-			info_parts = []
-			if self.digits == 3:
-				info_parts.append("Código EIA 3 dígitos: XY Z → XY × 10^Z")
+			partes_info = []
+			if self.digitos == 3:
+				partes_info.append("Código EIA 3 dígitos: XY Z → XY × 10^Z")
 			else:
-				info_parts.append("Código EIA 4 dígitos: XYZ W → XYZ × 10^W")
+				partes_info.append("Código EIA 4 dígitos: XYZ W → XYZ × 10^W")
 			
 			# Clasificar el valor
-			if value >= 1000000:
-				info_parts.append(f"Resistencia alta: {value/1000000:.2f} MΩ")
-			elif value >= 1000:
-				info_parts.append(f"Resistencia media: {value/1000:.2f} kΩ")
+			if valor >= 1000000:
+				partes_info.append(f"Resistencia alta: {valor/1000000:.2f} MΩ")
+			elif valor >= 1000:
+				partes_info.append(f"Resistencia media: {valor/1000:.2f} kΩ")
 			else:
-				info_parts.append(f"Resistencia baja: {value:.2f} Ω")
+				partes_info.append(f"Resistencia baja: {valor:.2f} Ω")
 			
-			self.info_var.set(" • ".join(info_parts))
-			if self.update_cb:
-				self.update_cb(value, code)
+			self.variable_info.set(" • ".join(partes_info))
+			if self.callback_actualizacion:
+				self.callback_actualizacion(valor, codigo)
 		except Exception as exc:
-			self.result_var.set("Error en el cálculo")
-			self.info_var.set(f"Error: {str(exc)}")
-			if self.update_cb:
-				self.update_cb(None, code)
+			self.variable_resultado.set("Error en el cálculo")
+			self.variable_info.set(f"Error: {str(exc)}")
+			if self.callback_actualizacion:
+				self.callback_actualizacion(None, codigo)
 
 
-class EIA96Tab(ttk.Frame):
-	def __init__(self, master: tk.Misc, update_cb=None) -> None:
+class TabEIA96(ttk.Frame):
+	def __init__(self, master: tk.Misc, callback_actualizacion=None) -> None:
 		super().__init__(master)
-		self.result_var = tk.StringVar()
-		self.code_var = tk.StringVar()
-		self.update_cb = update_cb
+		self.variable_resultado = tk.StringVar()
+		self.variable_codigo = tk.StringVar()
+		self.callback_actualizacion = callback_actualizacion
 
 		# Panel de entrada mejorado
 		input_frame = ttk.LabelFrame(self, text="🔢 Entrada del Código EIA-96", padding=15)
@@ -191,98 +191,96 @@ class EIA96Tab(ttk.Frame):
 		head.pack(fill=tk.X)
 		
 		ttk.Label(head, text="Código:", font=("Segoe UI", 11, "bold")).pack(side=tk.LEFT)
-		code_entry = ttk.Entry(head, textvariable=self.code_var, width=8, 
+		entry_codigo = ttk.Entry(head, textvariable=self.variable_codigo, width=8, 
 			font=("Segoe UI", 12))
-		code_entry.pack(side=tk.LEFT, padx=10)
-		code_entry.bind("<KeyRelease>", lambda e: self._from_entry())
+		entry_codigo.pack(side=tk.LEFT, padx=10)
+		entry_codigo.bind("<KeyRelease>", lambda e: self._desde_entrada())
 		
 		# Panel de resultados mejorado
 		result_frame = ttk.LabelFrame(self, text="📊 Resultado del Cálculo", padding=15)
 		result_frame.pack(fill=tk.X, padx=8, pady=6)
 		
 		# Resultado principal
-		self.result_lbl = ttk.Label(result_frame, textvariable=self.result_var, 
+		self.etiqueta_resultado = ttk.Label(result_frame, textvariable=self.variable_resultado, 
 			font=("Segoe UI", 18, "bold"), foreground="#1a1a1a")
-		self.result_lbl.pack(pady=(0, 10))
+		self.etiqueta_resultado.pack(pady=(0, 10))
 		
 		# Información adicional
-		self.info_var = tk.StringVar(value="")
-		self.info_lbl = ttk.Label(result_frame, textvariable=self.info_var, 
+		self.variable_info = tk.StringVar(value="")
+		self.etiqueta_info = ttk.Label(result_frame, textvariable=self.variable_info, 
 			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=500)
-		self.info_lbl.pack()
+		self.etiqueta_info.pack()
 
-		board = ttk.Frame(self)
-		board.pack(padx=8, pady=8)
+		panel_teclado = ttk.Frame(self)
+		panel_teclado.pack(padx=8, pady=8)
 
 		# botones 00-96
 		for i in range(1, 97):
-			code = f"{i:02d}"
-			btn = ttk.Button(board, text=code, width=4, command=lambda c=code: self._pick_digits(c))
-			row = (i - 1) // 12
-			col = (i - 1) % 12
-			btn.grid(row=row, column=col, padx=2, pady=2)
+			codigo = f"{i:02d}"
+			btn = ttk.Button(panel_teclado, text=codigo, width=4, command=lambda c=codigo: self._seleccionar_digitos(c))
+			fila = (i - 1) // 12
+			columna = (i - 1) % 12
+			btn.grid(row=fila, column=columna, padx=2, pady=2)
 
 		# multiplicadores
-		mult_frame = ttk.Frame(self)
-		mult_frame.pack(padx=8, pady=6)
-		for ch, label in ("Z", "mΩ"), ("Y", "cΩ"), ("R", "dΩ"), ("A", "Ω"), ("B", "kΩ"), ("C", "100Ω"), ("D", "kΩ"), ("E", "10kΩ"), ("F", "100kΩ"), ("H", "MΩ"):
-			pass
+		marco_multiplicadores = ttk.Frame(self)
+		marco_multiplicadores.pack(padx=8, pady=6)
 		# Mostrar letras reales
-		letters = ["Z", "Y", "R", "A", "B", "C", "D", "E", "F", "H"]
-		for j, ch in enumerate(letters):
-			b = ttk.Button(mult_frame, text=ch, width=3, command=lambda c=ch: self._pick_letter(c))
+		letras = ["Z", "Y", "R", "A", "B", "C", "D", "E", "F", "H"]
+		for j, caracter in enumerate(letras):
+			b = ttk.Button(marco_multiplicadores, text=caracter, width=3, command=lambda c=caracter: self._seleccionar_letra(c))
 			b.grid(row=0, column=j, padx=2)
 
-	def _pick_digits(self, digits: str) -> None:
-		self.code_var.set(digits + (self.code_var.get()[2:] if len(self.code_var.get()) == 3 else ""))
-		self._try_compute()
+	def _seleccionar_digitos(self, digitos: str) -> None:
+		self.variable_codigo.set(digitos + (self.variable_codigo.get()[2:] if len(self.variable_codigo.get()) == 3 else ""))
+		self._intentar_calcular()
 
-	def _pick_letter(self, letter: str) -> None:
-		base = self.code_var.get()[:2]
+	def _seleccionar_letra(self, letra: str) -> None:
+		base = self.variable_codigo.get()[:2]
 		if len(base) != 2:
 			return
-		self.code_var.set(base + letter)
-		self._try_compute()
+		self.variable_codigo.set(base + letra)
+		self._intentar_calcular()
 
-	def _from_entry(self) -> None:
-		self._try_compute()
+	def _desde_entrada(self) -> None:
+		self._intentar_calcular()
 
-	def _try_compute(self) -> None:
-		code = self.code_var.get().strip()
-		if len(code) != 3:
-			self.result_var.set("")
-			self.info_var.set("Ingresa un código de 3 caracteres (2 dígitos + letra)")
-			if self.update_cb:
-				self.update_cb(None, code)
+	def _intentar_calcular(self) -> None:
+		codigo = self.variable_codigo.get().strip()
+		if len(codigo) != 3:
+			self.variable_resultado.set("")
+			self.variable_info.set("Ingresa un código de 3 caracteres (2 dígitos + letra)")
+			if self.callback_actualizacion:
+				self.callback_actualizacion(None, codigo)
 			return
 		try:
-			value = parsear_smd_eia_96(code)
-			self.result_var.set(formatear_ohmios(value))
+			valor = parsear_smd_eia_96(codigo)
+			self.variable_resultado.set(formatear_ohmios(valor))
 			
 			# Información adicional
-			info_parts = []
-			info_parts.append("Código EIA-96: 2 dígitos + letra multiplicador")
+			partes_info = []
+			partes_info.append("Código EIA-96: 2 dígitos + letra multiplicador")
 			
 			# Mostrar desglose del código
-			digits = code[:2]
-			letter = code[2]
-			info_parts.append(f"Desglose: {digits} + {letter}")
+			digitos = codigo[:2]
+			letra = codigo[2]
+			partes_info.append(f"Desglose: {digitos} + {letra}")
 			
 			# Clasificar el valor
-			if value >= 1000000:
-				info_parts.append(f"Resistencia alta: {value/1000000:.2f} MΩ")
-			elif value >= 1000:
-				info_parts.append(f"Resistencia media: {value/1000:.2f} kΩ")
+			if valor >= 1000000:
+				partes_info.append(f"Resistencia alta: {valor/1000000:.2f} MΩ")
+			elif valor >= 1000:
+				partes_info.append(f"Resistencia media: {valor/1000:.2f} kΩ")
 			else:
-				info_parts.append(f"Resistencia baja: {value:.2f} Ω")
+				partes_info.append(f"Resistencia baja: {valor:.2f} Ω")
 			
-			self.info_var.set(" • ".join(info_parts))
-			if self.update_cb:
-				self.update_cb(value, code)
+			self.variable_info.set(" • ".join(partes_info))
+			if self.callback_actualizacion:
+				self.callback_actualizacion(valor, codigo)
 		except Exception as exc:
-			self.result_var.set("Error en el cálculo")
-			self.info_var.set(f"Error: {str(exc)}")
-			if self.update_cb:
-				self.update_cb(None, code)
+			self.variable_resultado.set("Error en el cálculo")
+			self.variable_info.set(f"Error: {str(exc)}")
+			if self.callback_actualizacion:
+				self.callback_actualizacion(None, codigo)
 
 
