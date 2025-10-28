@@ -19,12 +19,12 @@ class ResistenciaColoresFrame(ttk.Frame):
 		self.band_count_var = tk.IntVar(value=4)
 		self.band_colors: List[tk.StringVar] = []
 
-		# Header con título y botón de regreso
+		# Header con título y botón de regreso (más compacto)
 		header_frame = ttk.Frame(self)
-		header_frame.pack(fill=tk.X, padx=20, pady=15)
+		header_frame.pack(fill=tk.X, padx=20, pady=10)
 		
 		title = ttk.Label(header_frame, text="🎨 Calculadora: Código de Colores", 
-			font=("Segoe UI", 18, "bold"), foreground="#2c3e50")
+			font=("Segoe UI", 16, "bold"), foreground="#2c3e50")
 		title.pack(side=tk.LEFT)
 		
 		if on_back:
@@ -36,14 +36,14 @@ class ResistenciaColoresFrame(ttk.Frame):
 		main_frame = ttk.Frame(self)
 		main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-		# Panel de controles
-		controls_frame = ttk.LabelFrame(main_frame, text="Configuración", padding=15)
-		controls_frame.pack(fill=tk.X, pady=(0, 15))
+		# Panel de controles (más compacto)
+		controls_frame = ttk.LabelFrame(main_frame, text="Configuración", padding=10)
+		controls_frame.pack(fill=tk.X, pady=(0, 10))
 
 		# Selector de número de bandas
 		bands_label = ttk.Label(controls_frame, text="Número de bandas:", 
 			font=("Segoe UI", 11, "bold"))
-		bands_label.pack(anchor=tk.W, pady=(0, 10))
+		bands_label.pack(anchor=tk.W, pady=(0, 8))
 		
 		bands_frame = ttk.Frame(controls_frame)
 		bands_frame.pack(fill=tk.X)
@@ -53,64 +53,64 @@ class ResistenciaColoresFrame(ttk.Frame):
 				variable=self.band_count_var, value=n, command=self._rebuild_bands)
 			radio.pack(side=tk.LEFT, padx=(0, 20))
 
-		# Panel de selección de bandas
-		self.bands_panel = ttk.LabelFrame(main_frame, text="Selección de Colores", padding=15)
-		self.bands_panel.pack(fill=tk.X, pady=(0, 15))
+		# Panel de selección de bandas (más compacto)
+		self.bands_panel = ttk.LabelFrame(main_frame, text="Selección de Colores", padding=10)
+		self.bands_panel.pack(fill=tk.X, pady=(0, 10))
 
-		# Canvas para previsualizar la resistencia
-		canvas_frame = ttk.LabelFrame(main_frame, text="Previsualización", padding=15)
-		canvas_frame.pack(fill=tk.X, pady=(0, 15))
+		# Canvas para previsualizar la resistencia (más pequeño)
+		canvas_frame = ttk.LabelFrame(main_frame, text="Previsualización", padding=10)
+		canvas_frame.pack(fill=tk.X, pady=(0, 10))
 		
-		self.canvas = tk.Canvas(canvas_frame, height=160, bg="#ffffff", 
+		self.canvas = tk.Canvas(canvas_frame, height=120, bg="#ffffff", 
 			highlightthickness=2, highlightbackground="#e0e0e0", relief="solid")
-		self.canvas.pack(fill=tk.X, pady=10)
+		self.canvas.pack(fill=tk.X, pady=5)
 		self.canvas.bind("<Configure>", lambda e: self._draw_resistor([v.get() for v in self.band_colors] if self.band_colors else ["negro","negro","negro","marrón"]))
 
-		# Panel de resultados mejorado
-		result_frame = ttk.LabelFrame(main_frame, text="📊 Resultado del Cálculo", padding=20)
+		# Panel de resultados mejorado (más compacto)
+		result_frame = ttk.LabelFrame(main_frame, text="📊 Resultado del Cálculo", padding=15)
 		result_frame.pack(fill=tk.X)
 		
 		# Contenedor principal del resultado
 		result_container = ttk.Frame(result_frame)
 		result_container.pack(fill=tk.X)
 		
-		# Resultado principal con mejor diseño
+		# Resultado principal con mejor diseño y mayor visibilidad
 		self.result_var = tk.StringVar(value="")
 		result_label = ttk.Label(result_container, textvariable=self.result_var, 
-			font=("Segoe UI", 20, "bold"), foreground="#1a1a1a")
-		result_label.pack(pady=(0, 15))
+			font=("Segoe UI", 28, "bold"), foreground="#1a365d")
+		result_label.pack(pady=15)
 		
-		# Panel de detalles con mejor organización
+		# Panel de detalles con mejor organización (tolerancia y temp en la misma línea)
 		details_frame = ttk.Frame(result_container)
 		details_frame.pack(fill=tk.X)
 		
-		# Tolerancia
+		# Tolerancia (lado izquierdo)
 		self.tolerance_var = tk.StringVar(value="")
 		tolerance_label = ttk.Label(details_frame, text="Tolerancia:", 
-			font=("Segoe UI", 11, "bold"), foreground="#2c3e50")
+			font=("Segoe UI", 12, "bold"), foreground="#2c3e50")
 		tolerance_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
 		
 		self.tolerance_value_var = tk.StringVar(value="")
 		tolerance_value_label = ttk.Label(details_frame, textvariable=self.tolerance_value_var, 
-			font=("Segoe UI", 11), foreground="#1a1a1a")
-		tolerance_value_label.grid(row=0, column=1, sticky=tk.W)
+			font=("Segoe UI", 12, "bold"), foreground="#e74c3c")
+		tolerance_value_label.grid(row=0, column=1, sticky=tk.W, padx=(0, 30))
 		
-		# Coeficiente de temperatura (PPM)
+		# Coeficiente de temperatura (PPM) - mismo nivel que tolerancia
 		self.ppm_var = tk.StringVar(value="")
 		ppm_label = ttk.Label(details_frame, text="Coef. Temp.:", 
-			font=("Segoe UI", 11, "bold"), foreground="#2c3e50")
-		ppm_label.grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+			font=("Segoe UI", 12, "bold"), foreground="#2c3e50")
+		ppm_label.grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
 		
 		self.ppm_value_var = tk.StringVar(value="")
 		ppm_value_label = ttk.Label(details_frame, textvariable=self.ppm_value_var, 
-			font=("Segoe UI", 11), foreground="#1a1a1a")
-		ppm_value_label.grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
+			font=("Segoe UI", 12, "bold"), foreground="#27ae60")
+		ppm_value_label.grid(row=0, column=3, sticky=tk.W)
 		
-		# Información adicional
+		# Información adicional (debajo de tolerancia y coeficiente)
 		self.info_var = tk.StringVar(value="")
-		info_label = ttk.Label(result_container, textvariable=self.info_var, 
-			font=("Segoe UI", 10), foreground="#2c3e50", wraplength=600)
-		info_label.pack(pady=(15, 0))
+		info_label = ttk.Label(details_frame, textvariable=self.info_var, 
+			font=("Segoe UI", 10), foreground="#34495e", wraplength=600)
+		info_label.grid(row=1, column=0, columnspan=4, sticky=tk.W, pady=(8, 0))
 
 		self._rebuild_bands()
 		# Forzar un primer dibujo con 4 bandas por defecto
